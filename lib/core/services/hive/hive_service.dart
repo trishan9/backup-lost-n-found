@@ -15,10 +15,12 @@ class HiveService {
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/${HiveTableConstant.dbName}';
     Hive.init(path);
+
     _registerAdapters();
-    insertBatchDummyData();
-    insertCategoryDummyData();
     await _openBoxes();
+
+    await insertBatchDummyData();
+    await insertCategoryDummyData();
   }
 
   Future<void> insertBatchDummyData() async {
