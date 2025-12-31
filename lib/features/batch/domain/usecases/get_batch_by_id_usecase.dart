@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/core/usecases/app_usecase.dart';
+import 'package:lost_n_found/features/batch/data/repositories/batch_repository.dart';
 import 'package:lost_n_found/features/batch/domain/entities/batch_entity.dart';
 import 'package:lost_n_found/features/batch/domain/repositories/batch_repository.dart';
 
@@ -13,6 +15,11 @@ class GetBatchByIdUsecaseParams extends Equatable {
   @override
   List<Object?> get props => [batchId];
 }
+
+final getBatchByIdUsecaseProvider = Provider<GetBatchByIdUsecase>((ref) {
+  final batchRepository = ref.read(batchRepositoryProvider);
+  return GetBatchByIdUsecase(batchRepository: batchRepository);
+});
 
 class GetBatchByIdUsecase
     implements UsecaseWithParams<BatchEntity, GetBatchByIdUsecaseParams> {

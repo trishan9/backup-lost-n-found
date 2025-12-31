@@ -6,6 +6,9 @@ import 'package:lost_n_found/features/category/domain/usecases/get_category_by_i
 import 'package:lost_n_found/features/category/domain/usecases/update_category_usecase.dart';
 import 'package:lost_n_found/features/category/presentation/state/category_state.dart';
 
+final categoryViewModelProvider =
+    NotifierProvider<CategoryViewmodel, CategoryState>(CategoryViewmodel.new);
+
 class CategoryViewmodel extends Notifier<CategoryState> {
   late final GetAllCategoryUsecase _getAllCategoryUsecase;
   late final GetCategoryByIdUsecase _getCategoryByIdUsecase;

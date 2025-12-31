@@ -6,6 +6,10 @@ import 'package:lost_n_found/features/batch/domain/usecases/get_batch_by_id_usec
 import 'package:lost_n_found/features/batch/domain/usecases/update_batch_usecase.dart';
 import 'package:lost_n_found/features/batch/presentation/state/batch_state.dart';
 
+final batchViewModelProvider = NotifierProvider<BatchViewmodel, BatchState>(
+  BatchViewmodel.new,
+);
+
 class BatchViewmodel extends Notifier<BatchState> {
   late final GetAllBatchUsecase _getAllBatchUsecase;
   late final CreateBatchUsecase _createBatchUsecase;
@@ -15,12 +19,19 @@ class BatchViewmodel extends Notifier<BatchState> {
 
   @override
   BatchState build() {
-    // Initialize the usecases here using ref, which we will do later
+    _getAllBatchUsecase = ref.read(getAllBatchUsecaseProvider);
+    _createBatchUsecase = ref.read(createBatchUsecaseProvider);
+    _updateBatchUsecase = ref.read(updateBatchUsecaseProvider);
+    _deleteBatchUsecase = ref.read(deleteBatchUsecaseProvider);
+    _getBatchByIdUsecase = ref.read(getBatchByIdUsecaseProvider);
     return const BatchState();
   }
 
   Future<void> getAllBatches() async {
     state = state.copyWith(status: BatchStatus.loading);
+
+    await Future.delayed(Duration(seconds: 2));
+
     final result = await _getAllBatchUsecase();
 
     result.fold(

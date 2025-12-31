@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/core/usecases/app_usecase.dart';
+import 'package:lost_n_found/features/batch/data/repositories/batch_repository.dart';
 import 'package:lost_n_found/features/batch/domain/repositories/batch_repository.dart';
 
 class DeleteBatchUsecaseParams extends Equatable {
@@ -12,6 +14,11 @@ class DeleteBatchUsecaseParams extends Equatable {
   @override
   List<Object?> get props => [batchId];
 }
+
+final deleteBatchUsecaseProvider = Provider<DeleteBatchUsecase>((ref) {
+  final batchRepository = ref.read(batchRepositoryProvider);
+  return DeleteBatchUsecase(batchRepository: batchRepository);
+});
 
 class DeleteBatchUsecase
     implements UsecaseWithParams<bool, DeleteBatchUsecaseParams> {

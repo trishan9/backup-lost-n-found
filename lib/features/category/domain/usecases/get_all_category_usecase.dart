@@ -1,8 +1,15 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/core/usecases/app_usecase.dart';
+import 'package:lost_n_found/features/category/data/repositories/category_repository.dart';
 import 'package:lost_n_found/features/category/domain/entities/category_entity.dart';
-import 'package:lost_n_found/features/category/domain/repositories/batch_repository.dart';
+import 'package:lost_n_found/features/category/domain/repositories/category_repository.dart';
+
+final getAllCategoryUsecaseProvider = Provider<GetAllCategoryUsecase>((ref) {
+  final categoryRepository = ref.read(categoryRepositoryProvider);
+  return GetAllCategoryUsecase(categoryRepository: categoryRepository);
+});
 
 class GetAllCategoryUsecase
     implements UsecaseWithoutParams<List<CategoryEntity>> {

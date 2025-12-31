@@ -1,9 +1,17 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/features/category/data/datasources/category_datasource.dart';
+import 'package:lost_n_found/features/category/data/datasources/local/category_local_datasource.dart';
 import 'package:lost_n_found/features/category/data/models/category_hive_model.dart';
 import 'package:lost_n_found/features/category/domain/entities/category_entity.dart';
-import 'package:lost_n_found/features/category/domain/repositories/batch_repository.dart';
+import 'package:lost_n_found/features/category/domain/repositories/category_repository.dart';
+
+final categoryRepositoryProvider = Provider<ICategoryRepository>((ref) {
+  return CategoryRepository(
+    datasource: ref.read(categoryLocalDataSourceProvider),
+  );
+});
 
 class CategoryRepository implements ICategoryRepository {
   final ICategoryDataSource _datasource;
