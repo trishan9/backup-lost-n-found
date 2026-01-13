@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/theme_extensions.dart';
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/services/storage/user_session_service.dart';
 import '../../../item/presentation/pages/item_detail_page.dart';
+import '../../../category/domain/entities/category_entity.dart';
+import '../../../category/presentation/view_model/category_viewmodel.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedFilter = 0; // 0: All, 1: Lost, 2: Found
   String _selectedCategory = 'All';
 
@@ -96,6 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryState = ref.watch(categoryViewModelProvider);
+    final userSessionService = ref.watch(userSessionServiceProvider);
+    final userName = userSessionService.getCurrentUserFullName() ?? 'User';
+
     return Scaffold(
       // backgroundColor: context.backgroundColor // Using theme default,
       body: SafeArea(
@@ -121,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'John Doe',
+                          userName,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -177,14 +185,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppColors.softShadow,
+                    boxShadow: context.softShadow,
                   ),
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Search items...',
-                      hintStyle: TextStyle(color: AppColors.textTertiary),
+                      hintStyle: TextStyle(color: context.textTertiary),
                       prefixIcon: Icon(
                         Icons.search_rounded,
                         color: context.textSecondary,
@@ -221,9 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppColors.softShadow,
+                    boxShadow: context.softShadow,
                   ),
                   child: Row(
                     children: List.generate(_filters.length, (index) {
@@ -264,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
                                       ? Colors.white
-                                      : AppColors.textSecondary,
+                                      : context.textSecondary,
                                 ),
                               ),
                             ),
@@ -286,7 +294,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
+                  itemCount:
+                      categoryState.categories.length + 1, // +1 for "All"
                   itemBuilder: (context, index) {
                     final category = _categories[index];
                     final isSelected = _selectedCategory == category['name'];
@@ -306,9 +315,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             gradient: isSelected
                                 ? AppColors.primaryGradient
                                 : null,
-                            color: isSelected ? null : Colors.white,
+                            color: isSelected ? null : context.surfaceColor,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: AppColors.softShadow,
+                            boxShadow: context.softShadow,
                           ),
                           child: Row(
                             children: [
@@ -317,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 size: 18,
                                 color: isSelected
                                     ? Colors.white
-                                    : AppColors.textSecondary,
+                                    : context.textSecondary,
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -327,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
                                       ? Colors.white
-                                      : AppColors.textSecondary,
+                                      : context.textSecondary,
                                 ),
                               ),
                             ],
@@ -415,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icon(
                               Icons.inbox_rounded,
                               size: 64,
-                              color: AppColors.textTertiary.withAlpha(128),
+                              color: context.textTertiary.withAlpha(128),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -424,6 +433,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fontSize: 16,
                                 color: context.textSecondary,
                                 fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Be the first to report a lost or found item!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: context.textSecondary,
                               ),
                             ),
                           ],
@@ -441,7 +458,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _ItemCard(
                             title: item['title'],
                             location: item['location'],
-                            time: item['time'],
                             category: item['category'],
                             isLost: item['isLost'],
                             onTap: () {
@@ -489,44 +505,51 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: context.cardShadow,
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               gradient: gradient,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: Colors.white, size: 22),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: context.textPrimary,
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: context.textPrimary,
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.textSecondary,
-                  fontWeight: FontWeight.w500,
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -537,7 +560,6 @@ class _StatCard extends StatelessWidget {
 class _ItemCard extends StatelessWidget {
   final String title;
   final String location;
-  final String time;
   final String category;
   final bool isLost;
   final VoidCallback? onTap;
@@ -545,7 +567,6 @@ class _ItemCard extends StatelessWidget {
   const _ItemCard({
     required this.title,
     required this.location,
-    required this.time,
     required this.category,
     required this.isLost,
     this.onTap,
@@ -574,9 +595,9 @@ class _ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.softShadow,
+        boxShadow: context.softShadow,
       ),
       child: Material(
         color: Colors.transparent,
@@ -685,20 +706,6 @@ class _ItemCard extends StatelessWidget {
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 14,
-                            color: AppColors.textTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textTertiary,
                             ),
                           ),
                         ],
