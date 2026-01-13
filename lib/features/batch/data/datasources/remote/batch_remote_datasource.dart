@@ -14,7 +14,7 @@ class BatchRemoteDatasource implements IBatchRemoteDatasource {
   final ApiClient _apiClient;
 
   BatchRemoteDatasource({required ApiClient apiClient})
-    : _apiClient = apiClient;
+    : _apiClient = apiClient; // dependent on API Client
 
   @override
   Future<bool> createBatch(BatchApiModel batch) {
@@ -46,5 +46,5 @@ class BatchRemoteDatasource implements IBatchRemoteDatasource {
   Future<bool> updateBatch(BatchApiModel batch) {
     // TODO: implement updateBatch
     throw UnimplementedError();
-  } // dependent on API Client
+  }
 }
