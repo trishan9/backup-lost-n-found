@@ -13,7 +13,7 @@ import 'package:lost_n_found/features/auth/domain/repositories/auth_repository.d
 
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   final authLocalDatasource = ref.read(authLocalDatasourceProvider);
-  final authRemoteDatasource = ref.read(authRemoteDataSourceProvider);
+  final authRemoteDatasource = ref.read(authRemoteDatasourceProvider);
   final networkInfo = ref.read(networkInfoProvider);
 
   return AuthRepository(

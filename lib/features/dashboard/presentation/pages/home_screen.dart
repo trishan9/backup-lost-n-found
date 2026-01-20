@@ -5,7 +5,6 @@ import '../../../../app/theme/theme_extensions.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/services/storage/user_session_service.dart';
 import '../../../item/presentation/pages/item_detail_page.dart';
-import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/view_model/category_viewmodel.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -466,7 +465,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ItemDetailPage(
                                   title: item['title'],
                                   location: item['location'],
-                                  time: item['time'],
                                   category: item['category'],
                                   isLost: item['isLost'],
                                   description:

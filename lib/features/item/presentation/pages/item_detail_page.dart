@@ -6,7 +6,6 @@ import '../../../../core/utils/snackbar_utils.dart';
 class ItemDetailPage extends StatelessWidget {
   final String title;
   final String location;
-  final String time;
   final String category;
   final bool isLost;
   final String? description;
@@ -17,7 +16,6 @@ class ItemDetailPage extends StatelessWidget {
     super.key,
     required this.title,
     required this.location,
-    required this.time,
     required this.category,
     required this.isLost,
     this.description,
@@ -110,7 +108,9 @@ class ItemDetailPage extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  gradient: isLost ? AppColors.lostGradient : AppColors.foundGradient,
+                  gradient: isLost
+                      ? AppColors.lostGradient
+                      : AppColors.foundGradient,
                 ),
                 child: SafeArea(
                   child: Column(
@@ -144,7 +144,9 @@ class ItemDetailPage extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isLost ? Icons.search_off_rounded : Icons.check_circle_rounded,
+                              isLost
+                                  ? Icons.search_off_rounded
+                                  : Icons.check_circle_rounded,
                               size: 18,
                               color: Colors.white,
                             ),
@@ -225,18 +227,9 @@ class ItemDetailPage extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                _InfoChip(
-                                  icon: Icons.location_on_rounded,
-                                  text: location,
-                                ),
-                                const SizedBox(width: 16),
-                                _InfoChip(
-                                  icon: Icons.access_time_rounded,
-                                  text: time,
-                                ),
-                              ],
+                            _InfoChip(
+                              icon: Icons.location_on_rounded,
+                              text: location,
                             ),
                           ],
                         ),
@@ -400,7 +393,9 @@ class ItemDetailPage extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: isLost ? AppColors.foundGradient : AppColors.primaryGradient,
+                      gradient: isLost
+                          ? AppColors.foundGradient
+                          : AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: AppColors.buttonShadow,
                     ),
@@ -408,7 +403,9 @@ class ItemDetailPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          isLost ? Icons.check_circle_rounded : Icons.pan_tool_rounded,
+                          isLost
+                              ? Icons.check_circle_rounded
+                              : Icons.pan_tool_rounded,
                           color: Colors.white,
                         ),
                         const SizedBox(width: 10),
@@ -436,16 +433,16 @@ class ItemDetailPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                gradient: isLost ? AppColors.foundGradient : AppColors.primaryGradient,
+                gradient: isLost
+                    ? AppColors.foundGradient
+                    : AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -500,30 +497,28 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _InfoChip({
-    required this.icon,
-    required this.text,
-  });
+  const _InfoChip({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: context.textSecondary,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 13,
-            color: context.textSecondary,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.5,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: context.textSecondary),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 13, color: context.textSecondary),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
