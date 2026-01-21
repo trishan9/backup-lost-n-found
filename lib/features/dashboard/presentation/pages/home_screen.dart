@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/theme_extensions.dart';
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/services/storage/user_session_service.dart';
 import '../../../item/presentation/pages/item_detail_page.dart';
+import '../../../item/domain/entities/item_entity.dart';
+import '../../../item/presentation/view_model/item_viewmodel.dart';
+import '../../../item/presentation/state/item_state.dart';
+import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/view_model/category_viewmodel.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -16,90 +21,75 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedFilter = 0; // 0: All, 1: Lost, 2: Found
-  String _selectedCategory = 'All';
+  String? _selectedCategoryId;
 
   final List<String> _filters = ['All', 'Lost', 'Found'];
-  // Later this data will come from backend/API
-  final List<Map<String, dynamic>> _categories = [
-    {'name': 'All', 'icon': Icons.apps_rounded},
-    {'name': 'Electronics', 'icon': Icons.devices_rounded},
-    {'name': 'Personal', 'icon': Icons.person_rounded},
-    {'name': 'Accessories', 'icon': Icons.watch_rounded},
-    {'name': 'Documents', 'icon': Icons.description_rounded},
-    {'name': 'Keys', 'icon': Icons.key_rounded},
-    {'name': 'Bags', 'icon': Icons.backpack_rounded},
-  ];
 
-  // Mock data for items
-  final List<Map<String, dynamic>> _items = [
-    {
-      'title': 'iPhone 14 Pro',
-      'location': 'Library, Block A',
-      'time': '2h ago',
-      'category': 'Electronics',
-      'isLost': true,
-      'image': null,
-    },
-    {
-      'title': 'Blue Backpack',
-      'location': 'Cafeteria',
-      'time': '3h ago',
-      'category': 'Bags',
-      'isLost': false,
-      'image': null,
-    },
-    {
-      'title': 'Car Keys',
-      'location': 'Parking Lot',
-      'time': '5h ago',
-      'category': 'Keys',
-      'isLost': true,
-      'image': null,
-    },
-    {
-      'title': 'Student ID Card',
-      'location': 'Block C, Room 201',
-      'time': '1d ago',
-      'category': 'Documents',
-      'isLost': false,
-      'image': null,
-    },
-    {
-      'title': 'Apple Watch',
-      'location': 'Gym',
-      'time': '1d ago',
-      'category': 'Accessories',
-      'isLost': true,
-      'image': null,
-    },
-    {
-      'title': 'Wallet',
-      'location': 'Block B, Ground Floor',
-      'time': '2d ago',
-      'category': 'Personal',
-      'isLost': false,
-      'image': null,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(itemViewModelProvider.notifier).getAllItems();
+      ref.read(categoryViewModelProvider.notifier).getAllCategories();
+    });
+  }
 
-  List<Map<String, dynamic>> get _filteredItems {
-    return _items.where((item) {
-      // Filter by Lost/Found
-      if (_selectedFilter == 1 && !item['isLost']) return false;
-      if (_selectedFilter == 2 && item['isLost']) return false;
+  IconData _getCategoryIcon(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'electronics':
+        return Icons.devices_rounded;
+      case 'personal':
+        return Icons.person_rounded;
+      case 'accessories':
+        return Icons.watch_rounded;
+      case 'documents':
+        return Icons.description_rounded;
+      case 'keys':
+        return Icons.key_rounded;
+      case 'bags':
+        return Icons.backpack_rounded;
+      default:
+        return Icons.inventory_2_rounded;
+    }
+  }
 
-      // Filter by category
-      if (_selectedCategory != 'All' && item['category'] != _selectedCategory) {
-        return false;
-      }
+  List<ItemEntity> _getFilteredItems(ItemState itemState) {
+    List<ItemEntity> items = itemState.items;
 
-      return true;
-    }).toList();
+    // Filter by Lost/Found
+    if (_selectedFilter == 1) {
+      items = items.where((item) => item.type == ItemType.lost).toList();
+    } else if (_selectedFilter == 2) {
+      items = items.where((item) => item.type == ItemType.found).toList();
+    }
+
+    // Filter by category
+    if (_selectedCategoryId != null) {
+      items = items
+          .where((item) => item.category == _selectedCategoryId)
+          .toList();
+    }
+
+    return items;
+  }
+
+  String _getCategoryNameById(
+    String? categoryId,
+    List<CategoryEntity> categories,
+  ) {
+    if (categoryId == null) return 'Other';
+    try {
+      return categories.firstWhere((c) => c.categoryId == categoryId).name;
+    } catch (e) {
+      return 'Other';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final itemState = ref.watch(itemViewModelProvider);
     final categoryState = ref.watch(categoryViewModelProvider);
+    final filteredItems = _getFilteredItems(itemState);
     final userSessionService = ref.watch(userSessionServiceProvider);
     final userName = userSessionService.getCurrentUserFullName() ?? 'User';
 
@@ -296,15 +286,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemCount:
                       categoryState.categories.length + 1, // +1 for "All"
                   itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final isSelected = _selectedCategory == category['name'];
+                    // First item is "All"
+                    if (index == 0) {
+                      final isSelected = _selectedCategoryId == null;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = null;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? AppColors.primaryGradient
+                                  : null,
+                              color: isSelected ? null : context.surfaceColor,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: context.softShadow,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.apps_rounded,
+                                  size: 18,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : context.textSecondary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'All',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : context.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final category = categoryState.categories[index - 1];
+                    final isSelected =
+                        _selectedCategoryId == category.categoryId;
 
                     return Padding(
                       padding: const EdgeInsets.only(right: 10),
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
-                            _selectedCategory = category['name'];
+                            _selectedCategoryId = category.categoryId;
                           });
                         },
                         child: AnimatedContainer(
@@ -321,7 +361,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Row(
                             children: [
                               Icon(
-                                category['icon'],
+                                _getCategoryIcon(category.name),
                                 size: 18,
                                 color: isSelected
                                     ? Colors.white
@@ -329,7 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                category['name'],
+                                category.name,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -360,7 +400,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: _StatCard(
                         icon: Icons.search_off_rounded,
                         title: 'Lost Items',
-                        value: '12',
+                        value: '${itemState.lostItems.length}',
                         gradient: AppColors.lostGradient,
                       ),
                     ),
@@ -369,7 +409,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: _StatCard(
                         icon: Icons.check_circle_rounded,
                         title: 'Found Items',
-                        value: '8',
+                        value: '${itemState.foundItems.length}',
                         gradient: AppColors.foundGradient,
                       ),
                     ),
@@ -413,7 +453,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
             // Items List
-            _filteredItems.isEmpty
+            itemState.status == ItemStatus.loading
+                ? const SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  )
+                : filteredItems.isEmpty
                 ? SliverToBoxAdapter(
                     child: Center(
                       child: Padding(
@@ -451,31 +500,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = _filteredItems[index];
+                        final item = filteredItems[index];
+                        final categoryName = _getCategoryNameById(
+                          item.category,
+                          categoryState.categories,
+                        );
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: _ItemCard(
-                            title: item['title'],
-                            location: item['location'],
-                            category: item['category'],
-                            isLost: item['isLost'],
+                            title: item.itemName,
+                            location: item.location,
+                            category: categoryName,
+                            isLost: item.type == ItemType.lost,
+                            imageUrl: item.media != null
+                                ? ApiEndpoints.itemPicture(item.media!)
+                                : null,
                             onTap: () {
                               AppRoutes.push(
                                 context,
                                 ItemDetailPage(
-                                  title: item['title'],
-                                  location: item['location'],
-                                  category: item['category'],
-                                  isLost: item['isLost'],
+                                  title: item.itemName,
+                                  location: item.location,
+                                  category: categoryName,
+                                  isLost: item.type == ItemType.lost,
                                   description:
-                                      'This item was ${item['isLost'] ? 'lost' : 'found'} at ${item['location']}. Please contact if you have any information.',
-                                  reportedBy: 'John Doe',
+                                      item.description ??
+                                      'No description provided.',
+                                  reportedBy: item.reportedBy ?? 'Anonymous',
+                                  imageUrl: item.media != null
+                                      ? '${ApiEndpoints.itemPicture}${item.media}'
+                                      : null,
                                 ),
                               );
                             },
                           ),
                         );
-                      }, childCount: _filteredItems.length),
+                      }, childCount: filteredItems.length),
                     ),
                   ),
 
@@ -560,6 +620,7 @@ class _ItemCard extends StatelessWidget {
   final String location;
   final String category;
   final bool isLost;
+  final String? imageUrl;
   final VoidCallback? onTap;
 
   const _ItemCard({
@@ -567,6 +628,7 @@ class _ItemCard extends StatelessWidget {
     required this.location,
     required this.category,
     required this.isLost,
+    this.imageUrl,
     this.onTap,
   });
 
@@ -606,21 +668,56 @@ class _ItemCard extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                // Item Icon
+                // Item Image or Icon
                 Container(
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: isLost
-                        ? AppColors.lostGradient
-                        : AppColors.foundGradient,
+                    gradient: imageUrl == null
+                        ? (isLost
+                              ? AppColors.lostGradient
+                              : AppColors.foundGradient)
+                        : null,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    _getCategoryIcon(category),
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: isLost
+                                    ? AppColors.lostGradient
+                                    : AppColors.foundGradient,
+                              ),
+                              child: Icon(
+                                _getCategoryIcon(category),
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                        )
+                      : Icon(
+                          _getCategoryIcon(category),
+                          color: Colors.white,
+                          size: 28,
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

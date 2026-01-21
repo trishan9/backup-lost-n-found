@@ -37,19 +37,19 @@ class ItemEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        itemId,
-        reportedBy,
-        claimedBy,
-        category,
-        itemName,
-        description,
-        type,
-        location,
-        media,
-        mediaType,
-        isClaimed,
-        status,
-        createdAt,
-        updatedAt,
-      ];
+    itemId,
+    reportedBy,
+    claimedBy,
+    category,
+    itemName,
+    description,
+    type,
+    location,
+    media,
+    mediaType,
+    isClaimed,
+    status,
+    createdAt,
+    updatedAt,
+  ];
 }
