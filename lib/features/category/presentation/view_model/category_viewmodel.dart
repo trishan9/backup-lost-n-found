@@ -7,10 +7,10 @@ import 'package:lost_n_found/features/category/domain/usecases/update_category_u
 import 'package:lost_n_found/features/category/presentation/state/category_state.dart';
 
 final categoryViewModelProvider =
-    NotifierProvider<CategoryViewmodel, CategoryState>(CategoryViewmodel.new);
+    NotifierProvider<CategoryViewModel, CategoryState>(CategoryViewModel.new);
 
-class CategoryViewmodel extends Notifier<CategoryState> {
-  late final GetAllCategoryUsecase _getAllCategoryUsecase;
+class CategoryViewModel extends Notifier<CategoryState> {
+  late final GetAllCategoryUsecase _getAllCategoriesUsecase;
   late final GetCategoryByIdUsecase _getCategoryByIdUsecase;
   late final CreateCategoryUsecase _createCategoryUsecase;
   late final UpdateCategoryUsecase _updateCategoryUsecase;
@@ -18,14 +18,18 @@ class CategoryViewmodel extends Notifier<CategoryState> {
 
   @override
   CategoryState build() {
-    // Initialize the usecases here using ref, which we will do later
+    _getAllCategoriesUsecase = ref.read(getAllCategoryUsecaseProvider);
+    _getCategoryByIdUsecase = ref.read(getCategoryByIdUsecaseProvider);
+    _createCategoryUsecase = ref.read(createCategoryUsecaseProvider);
+    _updateCategoryUsecase = ref.read(updateCategoryUsecaseProvider);
+    _deleteCategoryUsecase = ref.read(deleteCategoryUsecaseProvider);
     return const CategoryState();
   }
 
   Future<void> getAllCategories() async {
     state = state.copyWith(status: CategoryStatus.loading);
 
-    final result = await _getAllCategoryUsecase();
+    final result = await _getAllCategoriesUsecase();
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -51,7 +55,10 @@ class CategoryViewmodel extends Notifier<CategoryState> {
         status: CategoryStatus.error,
         errorMessage: failure.message,
       ),
-      (category) => state = state.copyWith(status: CategoryStatus.loaded),
+      (category) => state = state.copyWith(
+        status: CategoryStatus.loaded,
+        selectedCategory: category,
+      ),
     );
   }
 
@@ -123,5 +130,13 @@ class CategoryViewmodel extends Notifier<CategoryState> {
         getAllCategories();
       },
     );
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
+  }
+
+  void clearSelectedCategory() {
+    state = state.copyWith(selectedCategory: null);
   }
 }
